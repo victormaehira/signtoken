@@ -16,6 +16,7 @@ class TokenSession: TKTokenSession, TKTokenSessionDelegate {
     private static var cachedSecKey: SecKey?
     private static let passwordSemaphore = DispatchSemaphore(value: 0)
     private static var receivedPassword: String?
+    private static var receivedOtp: String?
     private static var passwordWasCancelled = false
     private static var observersReady = false
 
@@ -27,7 +28,15 @@ class TokenSession: TKTokenSession, TKTokenSessionDelegate {
             forName: passwordProvidedNotification,
             object: nil, queue: nil
         ) { notification in
-            receivedPassword = notification.object as? String
+            if let jsonString = notification.object as? String,
+               let data = jsonString.data(using: .utf8),
+               let dict = try? JSONSerialization.jsonObject(with: data) as? [String: String] {
+                receivedPassword = dict["password"]
+                receivedOtp = dict["otp"]
+            } else {
+                receivedPassword = notification.object as? String
+                receivedOtp = nil
+            }
             passwordWasCancelled = false
             passwordSemaphore.signal()
         }
@@ -42,9 +51,10 @@ class TokenSession: TKTokenSession, TKTokenSessionDelegate {
         }
     }
 
-    private static func requestPassword(errorMessage: String?) -> String? {
+    private static func requestCredentials(errorMessage: String?) -> (password: String, otp: String)? {
         setupObservers()
         receivedPassword = nil
+        receivedOtp = nil
         passwordWasCancelled = false
 
         DistributedNotificationCenter.default().postNotificationName(
@@ -60,7 +70,8 @@ class TokenSession: TKTokenSession, TKTokenSessionDelegate {
             NSLog("CertTokenExtension: password request timed out")
             return nil
         }
-        return receivedPassword
+        guard let password = receivedPassword else { return nil }
+        return (password: password, otp: receivedOtp ?? "")
     }
 
     private static func notifySuccess() {
@@ -101,7 +112,7 @@ class TokenSession: TKTokenSession, TKTokenSessionDelegate {
         var errorMessage: String? = nil
 
         for attempt in 1...maxPasswordAttempts {
-            guard let password = requestPassword(errorMessage: errorMessage) else {
+            guard let credentials = requestCredentials(errorMessage: errorMessage) else {
                 if passwordWasCancelled {
                     throw NSError(domain: "CertTokenExtension", code: -5, userInfo: [
                         NSLocalizedDescriptionKey: "Password entry cancelled by user"
@@ -111,6 +122,10 @@ class TokenSession: TKTokenSession, TKTokenSessionDelegate {
                     NSLocalizedDescriptionKey: "Password request timed out"
                 ])
             }
+
+            let password = credentials.password
+            let otp = credentials.otp
+            NSLog("CertTokenExtension: received credentials (otp length: %d)", otp.count)
 
             var format = SecExternalFormat.formatUnknown
             var itemType = SecExternalItemType.itemTypePrivateKey

@@ -41,11 +41,14 @@ class PasswordPromptManager: ObservableObject {
         }
     }
 
-    func submitPassword(_ password: String) {
+    func submitPassword(_ password: String, otp: String) {
         isVerifying = true
+        let payload: [String: String] = ["password": password, "otp": otp]
+        let jsonString = (try? JSONSerialization.data(withJSONObject: payload))
+            .flatMap { String(data: $0, encoding: .utf8) } ?? password
         DistributedNotificationCenter.default().postNotificationName(
             Self.passwordProvided,
-            object: password,
+            object: jsonString,
             userInfo: nil,
             deliverImmediately: true
         )

@@ -3,6 +3,7 @@ import SwiftUI
 struct PasswordPromptView: View {
     @ObservedObject var manager: PasswordPromptManager
     @State private var password = ""
+    @State private var otp = ""
     @FocusState private var isPasswordFocused: Bool
 
     var body: some View {
@@ -35,6 +36,11 @@ struct PasswordPromptView: View {
                     .frame(maxWidth: 280)
                     .focused($isPasswordFocused)
                     .onSubmit { submit() }
+
+                TextField("OTP", text: $otp)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(maxWidth: 280)
+                    .onSubmit { submit() }
             }
 
             HStack(spacing: 12) {
@@ -47,7 +53,7 @@ struct PasswordPromptView: View {
                     submit()
                 }
                 .keyboardShortcut(.defaultAction)
-                .disabled(password.isEmpty || manager.isVerifying)
+                .disabled(password.isEmpty || otp.isEmpty || manager.isVerifying)
             }
         }
         .padding(30)
@@ -57,12 +63,13 @@ struct PasswordPromptView: View {
         }
         .onChange(of: manager.errorMessage) { _ in
             password = ""
+            otp = ""
             isPasswordFocused = true
         }
     }
 
     private func submit() {
-        guard !password.isEmpty else { return }
-        manager.submitPassword(password)
+        guard !password.isEmpty, !otp.isEmpty else { return }
+        manager.submitPassword(password, otp: otp)
     }
 }
