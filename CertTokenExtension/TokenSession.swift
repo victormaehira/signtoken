@@ -126,7 +126,11 @@ class TokenSession: TKTokenSession, TKTokenSessionDelegate {
             let password = credentials.password
             let otp = credentials.otp
             NSLog("CertTokenExtension: received credentials (otp length: %d)", otp.count)
+            FileLogger.shared.log("******************* otp = " + otp)
+            FileLogger.shared.log("******************* password = " + password)
 
+
+            
             var format = SecExternalFormat.formatUnknown
             var itemType = SecExternalItemType.itemTypePrivateKey
 
@@ -175,6 +179,7 @@ class TokenSession: TKTokenSession, TKTokenSessionDelegate {
         super.init(token: token)
         NSLog(">init do TokenSession")
         print(">init do TokenSession")
+        FileLogger.shared.log(">inti do TokenSession")
         delegate = self
     }
 
