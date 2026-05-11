@@ -1,9 +1,8 @@
 import CryptoTokenKit
-import Security
 
 class TokenSession: TKTokenSession, TKTokenSessionDelegate {
 
-    static let privateKey = "MIIEowIBAAKCAQEAt/KNX0Kq4LGc/AIVsAisYA2BOImtP7HTL6oB6k9BvJ/PE20YGdpDK3OXvcm1Q/k5b5kmnjdPBAMeTXQe5hiSvxBr0RpWykSB9EqIvRMr+k72/UgxqHdDopCu2LUudK85FkMdlFbO7UMDl9d/YZS1xPHX4i9Cid/+NobCmvy9WbKCQU1x5XjEnDhcntRXTYMnIT+SAib1hKPwM89AsWfQiE30WKU+y1Xxa0D1kxpnSCH+xzrjtWJU2eNoMLN4NOQecU36vCrUh80iLEZLHH5mmVT9NKP6NPe3/oAFOYwwv7fQAQ3x0E/T85yEFqEd9efw/hFTLB1T28RgeG4NaQQbLwIDAQABAoIBAC9yGJThlUGvjlZSE1X8Zrm/wfzbRhyPuXEp4KSXHNWSQs837Gd+rKSghBsn0+FcfzwRvKxCh9b5Fu/Ta8TdwbwWeDjPGmPBl+Ny9iIOt+EwTPS3kldpq8BaoT60PO9L4uWjGhYQ7f60slCP/QMmYFwUJSLqHbeCVweparifSBfCSzc8dH6dC6uOTizSF+6V7nkNU8lfJ9A52yYxK7zOv7AH4iD9hTpHmjyYsT5GDzgXLvZOpB9/WblL8mcy0WQDbSTfTqHSNlHenGXDFvCYv7AcbSoHIdiNHbXX1RjqNLEssdjZhQln2RJ2fFyVfKev2jJeQWuwrIcprQk0+slEo0ECgYEA56yHkRpIYujDQrIYMklAn5CRjasWbdBS6aCvv591SoYAPodN1HoPk6JjkfyJY4T5fBogUWYBxSE9YNT5Das6tUz33HdcbkCxRoC2JjD4HNRhjOU1iORLx+VdIiIWcunEzv8/MD/u6i+pBCofQ6+Bv1bpLBNmV6RUTlhralmZYvMCgYEAy0MeoMcL4SWOJ3JdVGC7upYyAJqf1pXhoiL9Ty9ZreMsXCZlvRG3dNyRlC/WeW5+yXf0Aev6Sc4g0tnFbqy5Q7NaTjqd0Hf7DSf/LAMninP1DhPCGhane0KbwUc0mLYQhRpZ36/tDTqRgNi7I9vV/cPdGb10GsABop53IJpj3dUCgYAVvYUDQtokHf+k1J2cqm8cCi7+gl2adIAzWFblvor9MVH4jC3rkIDBs+1wF6i05BedY75ApTfpTdM6sQGmHLlnpg9kavcLiZqZKR7uuo2t9ugolqHNdM7/tTBmMZi1s+Y6Ho3Jc1ZyN4K+100TxvaABCHhdviVpOAccgOyeTIBrQKBgQDK/T/UHpQdh+zcNhlAj85K+336HnEr0sjfrAO/FbGAt5Nwf6Qw2kWVPkVgcRnGcXPK7bFQTgLJvEIJcBP8gCAQnUe9Qkqii3+7Vss9f/T4Du+W3GKGvUMLFK0Jq3u6WnBLDNLeUgnxoSD4RPk3SW7+m6Dt+Ma/hCrd5VVgyO6c9QKBgFlV2AGeNqpLcL+OwkgMVh04hpLAeKJyaLWhCF2ZTRFtu2+6QyAoRQc8Ey4qkh0Zjho8pH4VL6o9py8yRyJkm6eXB33VOtOOeulyFkPTIzC52dz13sTjM4+cO1gQf7BB9utrIIctvAPDZ7CMhWZ0DNcyseUWleB/63w+qg9yoGim"
+    private static var cachedSessionToken: String?
 
     // MARK: - Cross-process password prompt via DistributedNotificationCenter
 
@@ -13,7 +12,6 @@ class TokenSession: TKTokenSession, TKTokenSessionDelegate {
     private static let passwordSuccessNotification = Notification.Name("br.com.certisign.addcert.passwordSuccess")
     private static let passwordFailedNotification = Notification.Name("br.com.certisign.addcert.passwordFailed")
 
-    private static var cachedSecKey: SecKey?
     private static let passwordSemaphore = DispatchSemaphore(value: 0)
     private static var receivedPassword: String?
     private static var receivedOtp: String?
@@ -92,22 +90,12 @@ class TokenSession: TKTokenSession, TKTokenSessionDelegate {
         )
     }
 
-    // MARK: - Private key import with interactive password
+    // MARK: - Remote HSM session
 
     private static let maxPasswordAttempts = 3
 
-    private static func getPrivateSecKey() throws -> SecKey {
-        if let key = cachedSecKey { return key }
-
-        let cleanBase64 = privateKey
-            .replacingOccurrences(of: "\n", with: "")
-            .replacingOccurrences(of: " ", with: "")
-
-        guard let keyData = Data(base64Encoded: cleanBase64) else {
-            throw NSError(domain: "CertTokenExtension", code: -1, userInfo: [
-                NSLocalizedDescriptionKey: "Failed to decode private key base64"
-            ])
-        }
+    private static func openRemoteSession() throws -> String {
+        if let token = cachedSessionToken { return token }
 
         var errorMessage: String? = nil
 
@@ -123,48 +111,27 @@ class TokenSession: TKTokenSession, TKTokenSessionDelegate {
                 ])
             }
 
-            let password = credentials.password
-            let otp = credentials.otp
-            NSLog("CertTokenExtension: received credentials (otp length: %d)", otp.count)
-            FileLogger.shared.log("******************* otp = " + otp)
-            FileLogger.shared.log("******************* password = " + password)
+            NSLog("CertTokenExtension: received credentials (otp length: %d)", credentials.otp.count)
+            FileLogger.shared.log("CertTokenExtension: received credentials, calling RemoteIdSignature.openSession")
 
-
-            
-            var format = SecExternalFormat.formatUnknown
-            var itemType = SecExternalItemType.itemTypePrivateKey
-
-            var keyParams = SecItemImportExportKeyParameters()
-            keyParams.version = UInt32(SEC_KEY_IMPORT_EXPORT_PARAMS_VERSION)
-            keyParams.passphrase = Unmanaged.passRetained(password as CFTypeRef)
-
-            var items: CFArray?
-            let status = SecItemImport(
-                keyData as CFData,
-                nil,
-                &format,
-                &itemType,
-                SecItemImportExportFlags(),
-                &keyParams,
-                nil,
-                &items
-            )
-
-            if status == errSecSuccess,
-               let importedItems = items,
-               CFArrayGetCount(importedItems) > 0 {
-                let secKey = unsafeBitCast(CFArrayGetValueAtIndex(importedItems, 0), to: SecKey.self)
-                cachedSecKey = secKey
+            do {
+                let result = try RemoteIdSignature.openSession(
+                    pin: credentials.password,
+                    otp: credentials.otp
+                )
+                cachedSessionToken = result.sessionToken
                 notifySuccess()
-                NSLog("CertTokenExtension: RSA private key loaded successfully")
-                return secKey
-            }
+                NSLog("CertTokenExtension: remote session opened successfully")
+                FileLogger.shared.log("CertTokenExtension: remote session opened successfully")
+                return result.sessionToken
+            } catch {
+                NSLog("CertTokenExtension: openSession attempt %d/%d failed: %@",
+                      attempt, maxPasswordAttempts, error.localizedDescription)
+                FileLogger.shared.log("CertTokenExtension: openSession attempt \(attempt)/\(maxPasswordAttempts) failed: \(error.localizedDescription)")
 
-            NSLog("CertTokenExtension: password attempt %d/%d failed (status: %d)",
-                  attempt, maxPasswordAttempts, status)
-
-            if attempt < maxPasswordAttempts {
-                errorMessage = "Senha incorreta. Tentativa \(attempt) de \(maxPasswordAttempts)."
+                if attempt < maxPasswordAttempts {
+                    errorMessage = "Falha na autenticação. Tentativa \(attempt) de \(maxPasswordAttempts): \(error.localizedDescription)"
+                }
             }
         }
 
@@ -177,9 +144,9 @@ class TokenSession: TKTokenSession, TKTokenSessionDelegate {
 
     override init(token: TKToken) {
         super.init(token: token)
-        NSLog(">init do TokenSession")
-        print(">init do TokenSession")
-        FileLogger.shared.log(">inti do TokenSession")
+        NSLog(">[NSLog]init do TokenSession")
+        print(">[print]init do TokenSession")
+        FileLogger.shared.log(">[FileLogger.sharedv4] init do TokenSession")
         delegate = self
     }
 
@@ -207,6 +174,39 @@ class TokenSession: TKTokenSession, TKTokenSessionDelegate {
         }
     }
 
+    // DigestInfo ASN.1 prefixes (RFC 8017 Section 9.2 Notes)
+    private static let sha256DigestInfoPrefix: [UInt8] = [
+        0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86,
+        0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x05,
+        0x00, 0x04, 0x20
+    ]
+    private static let sha384DigestInfoPrefix: [UInt8] = [
+        0x30, 0x41, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86,
+        0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x02, 0x05,
+        0x00, 0x04, 0x30
+    ]
+    private static let sha512DigestInfoPrefix: [UInt8] = [
+        0x30, 0x51, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86,
+        0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x03, 0x05,
+        0x00, 0x04, 0x40
+    ]
+
+    /// Strips DigestInfo ASN.1 wrapper from rsaSignatureRaw data,
+    /// returning just the raw hash and its algorithm name.
+    private static func extractHash(from digestInfo: Data) -> (hash: Data, algorithm: String)? {
+        let bytes = [UInt8](digestInfo)
+        if bytes.starts(with: sha256DigestInfoPrefix) && bytes.count == 19 + 32 {
+            return (Data(bytes.suffix(32)), "SHA-256")
+        }
+        if bytes.starts(with: sha384DigestInfoPrefix) && bytes.count == 19 + 48 {
+            return (Data(bytes.suffix(48)), "SHA-384")
+        }
+        if bytes.starts(with: sha512DigestInfoPrefix) && bytes.count == 19 + 64 {
+            return (Data(bytes.suffix(64)), "SHA-512")
+        }
+        return nil
+    }
+
     func tokenSession(
         _ session: TKTokenSession,
         sign dataToSign: Data,
@@ -215,25 +215,31 @@ class TokenSession: TKTokenSession, TKTokenSessionDelegate {
     ) throws -> Data {
         NSLog("CertTokenExtension: sign requested for key %@ (%d bytes)",
               String(describing: keyObjectID), dataToSign.count)
+        FileLogger.shared.log("CertTokenExtension: sign requested (\(dataToSign.count) bytes), calling openRemoteSession")
 
-        let key = try Self.getPrivateSecKey()
+        let sessionToken = try Self.openRemoteSession()
 
-        var error: Unmanaged<CFError>?
-        guard let signature = SecKeyCreateSignature(
-            key,
-            .rsaSignatureRaw,
-            dataToSign as CFData,
-            &error
-        ) else {
-            let desc = error?.takeRetainedValue().localizedDescription ?? "unknown error"
-            NSLog("CertTokenExtension: signing failed: %@", desc)
-            throw NSError(domain: "CertTokenExtension", code: -3, userInfo: [
-                NSLocalizedDescriptionKey: "Signing failed: \(desc)"
-            ])
+        var hashData = dataToSign
+        var hashAlgorithm = "SHA-256"
+
+        if let extracted = Self.extractHash(from: dataToSign) {
+            hashData = extracted.hash
+            hashAlgorithm = extracted.algorithm
+            FileLogger.shared.log("CertTokenExtension: stripped DigestInfo prefix, raw hash=\(hashData.count) bytes, algorithm=\(hashAlgorithm)")
+        } else {
+            FileLogger.shared.log("CertTokenExtension: no DigestInfo prefix detected, sending raw data (\(dataToSign.count) bytes)")
         }
 
-        NSLog("CertTokenExtension: sign succeeded (%d bytes)", (signature as Data).count)
-        return signature as Data
+        FileLogger.shared.log("CertTokenExtension: calling RemoteIdSignature.signHash")
+        let signature = try RemoteIdSignature.signHash(
+            sessionToken: sessionToken,
+            hashData: hashData,
+            algorithm: hashAlgorithm
+        )
+
+        FileLogger.shared.log("CertTokenExtension: remote sign succeeded (\(signature.count) bytes)")
+        NSLog("CertTokenExtension: remote sign succeeded (%d bytes)", signature.count)
+        return signature
     }
 
     func tokenSession(
@@ -245,23 +251,8 @@ class TokenSession: TKTokenSession, TKTokenSessionDelegate {
         NSLog("CertTokenExtension: decrypt requested for key %@ (%d bytes)",
               String(describing: keyObjectID), ciphertext.count)
 
-        let key = try Self.getPrivateSecKey()
-
-        var error: Unmanaged<CFError>?
-        guard let plaintext = SecKeyCreateDecryptedData(
-            key,
-            .rsaEncryptionRaw,
-            ciphertext as CFData,
-            &error
-        ) else {
-            let desc = error?.takeRetainedValue().localizedDescription ?? "unknown error"
-            NSLog("CertTokenExtension: decryption failed: %@", desc)
-            throw NSError(domain: "CertTokenExtension", code: -4, userInfo: [
-                NSLocalizedDescriptionKey: "Decryption failed: \(desc)"
-            ])
-        }
-
-        NSLog("CertTokenExtension: decrypt succeeded (%d bytes)", (plaintext as Data).count)
-        return plaintext as Data
+        throw NSError(domain: "CertTokenExtension", code: -4, userInfo: [
+            NSLocalizedDescriptionKey: "Remote decrypt not yet implemented"
+        ])
     }
 }
