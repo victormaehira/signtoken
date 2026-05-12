@@ -191,18 +191,34 @@ class TokenSession: TKTokenSession, TKTokenSessionDelegate {
         0x00, 0x04, 0x40
     ]
 
-    /// Strips DigestInfo ASN.1 wrapper from rsaSignatureRaw data,
-    /// returning just the raw hash and its algorithm name.
+    /// Strips PKCS#1 v1.5 padding (0x00 0x01 [0xFF..] 0x00 [payload])
+    /// and returns the inner payload (typically a DigestInfo).
+    private static func stripPKCS1v15Padding(from data: Data) -> Data? {
+        let bytes = [UInt8](data)
+        guard bytes.count >= 11,
+              bytes[0] == 0x00,
+              bytes[1] == 0x01 else { return nil }
+
+        var i = 2
+        while i < bytes.count && bytes[i] == 0xFF { i += 1 }
+        guard i < bytes.count, bytes[i] == 0x00 else { return nil }
+        i += 1
+        guard i < bytes.count else { return nil }
+        return Data(bytes[i...])
+    }
+
+    /// Strips DigestInfo ASN.1 wrapper, returning just the raw hash
+    /// and its algorithm name.
     private static func extractHash(from digestInfo: Data) -> (hash: Data, algorithm: String)? {
         let bytes = [UInt8](digestInfo)
         if bytes.starts(with: sha256DigestInfoPrefix) && bytes.count == 19 + 32 {
-            return (Data(bytes.suffix(32)), "SHA-256")
+            return (Data(bytes.suffix(32)), "SHA256")
         }
         if bytes.starts(with: sha384DigestInfoPrefix) && bytes.count == 19 + 48 {
-            return (Data(bytes.suffix(48)), "SHA-384")
+            return (Data(bytes.suffix(48)), "SHA384")
         }
         if bytes.starts(with: sha512DigestInfoPrefix) && bytes.count == 19 + 64 {
-            return (Data(bytes.suffix(64)), "SHA-512")
+            return (Data(bytes.suffix(64)), "SHA512")
         }
         return nil
     }
@@ -215,19 +231,24 @@ class TokenSession: TKTokenSession, TKTokenSessionDelegate {
     ) throws -> Data {
         NSLog("CertTokenExtension: sign requested for key %@ (%d bytes)",
               String(describing: keyObjectID), dataToSign.count)
-        FileLogger.shared.log("CertTokenExtension: sign requested (\(dataToSign.count) bytes), calling openRemoteSession")
+        FileLogger.shared.log("CertTokenExtension: sign requested (\(dataToSign.count) bytes), hex=\(dataToSign.map { String(format: "%02x", $0) }.joined())")
 
         let sessionToken = try Self.openRemoteSession()
 
         var hashData = dataToSign
-        var hashAlgorithm = "SHA-256"
+        var hashAlgorithm = "SHA256"
 
         if let extracted = Self.extractHash(from: dataToSign) {
             hashData = extracted.hash
             hashAlgorithm = extracted.algorithm
-            FileLogger.shared.log("CertTokenExtension: stripped DigestInfo prefix, raw hash=\(hashData.count) bytes, algorithm=\(hashAlgorithm)")
+            FileLogger.shared.log("CertTokenExtension: stripped DigestInfo, raw hash=\(hashData.count) bytes, algorithm=\(hashAlgorithm)")
+        } else if let innerPayload = Self.stripPKCS1v15Padding(from: dataToSign),
+                  let extracted = Self.extractHash(from: innerPayload) {
+            hashData = extracted.hash
+            hashAlgorithm = extracted.algorithm
+            FileLogger.shared.log("CertTokenExtension: stripped PKCS#1 v1.5 padding + DigestInfo, raw hash=\(hashData.count) bytes, algorithm=\(hashAlgorithm)")
         } else {
-            FileLogger.shared.log("CertTokenExtension: no DigestInfo prefix detected, sending raw data (\(dataToSign.count) bytes)")
+            FileLogger.shared.log("CertTokenExtension: no DigestInfo/PKCS#1 wrapper detected, dataToSign=\(dataToSign.count) bytes, passing as-is")
         }
 
         FileLogger.shared.log("CertTokenExtension: calling RemoteIdSignature.signHash")

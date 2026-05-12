@@ -60,7 +60,7 @@ enum RemoteIdSignature {
     static func signHash(
         sessionToken: String,
         hashData: Data,
-        algorithm: String = "SHA-256"
+        algorithm: String = "SHA256"
     ) throws -> Data {
         let hashBase64 = hashData.base64EncodedString()
 
@@ -75,7 +75,7 @@ enum RemoteIdSignature {
             ]
         ]
 
-        FileLogger.shared.log("RemoteIdSignature: signHash serial=\(serialNumberHardCoded) algorithm=\(algorithm) hashLen=\(hashData.count)")
+        FileLogger.shared.log("RemoteIdSignature: signHash hashLen=\(hashData.count) algorithm=\(algorithm) hashHex=\(hashData.map { String(format: "%02x", $0) }.joined())")
 
         let response = try performRequest(path: signHashPath, body: body)
 
