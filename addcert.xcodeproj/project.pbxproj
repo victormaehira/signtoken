@@ -7,11 +7,19 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		790FCE332FB6599800CBE194 /* CertTokenHelper.app in Embed Login Items */ = {isa = PBXBuildFile; fileRef = 79E4FF642FB61C6900DF8416 /* CertTokenHelper.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		795133F02F86D315001B2366 /* CryptoTokenKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 795133EF2F86D315001B2366 /* CryptoTokenKit.framework */; };
 		795133FC2F86D315001B2366 /* CertTokenExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 795133ED2F86D315001B2366 /* CertTokenExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		790FCE3A2FB6599800CBE194 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 795133CE2F86CF9E001B2366 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 79E4FF632FB61C6900DF8416;
+			remoteInfo = CertTokenHelper;
+		};
 		795133FA2F86D315001B2366 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 795133CE2F86CF9E001B2366 /* Project object */;
@@ -22,6 +30,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		790FCE322FB6591600CBE194 /* Embed Login Items */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Contents/Library/LoginItems;
+			dstSubfolderSpec = 1;
+			files = (
+				790FCE332FB6599800CBE194 /* CertTokenHelper.app in Embed Login Items */,
+			);
+			name = "Embed Login Items";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		795134012F86D315001B2366 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -39,6 +58,7 @@
 		795133D62F86CF9E001B2366 /* addcert.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = addcert.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		795133ED2F86D315001B2366 /* CertTokenExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CertTokenExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		795133EF2F86D315001B2366 /* CryptoTokenKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CryptoTokenKit.framework; path = System/Library/Frameworks/CryptoTokenKit.framework; sourceTree = SDKROOT; };
+		79E4FF642FB61C6900DF8416 /* CertTokenHelper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CertTokenHelper.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -65,6 +85,11 @@
 			path = CertTokenExtension;
 			sourceTree = "<group>";
 		};
+		79E4FF652FB61C6900DF8416 /* CertTokenHelper */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CertTokenHelper;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -83,6 +108,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		79E4FF612FB61C6900DF8416 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -91,6 +123,7 @@
 			children = (
 				795133D82F86CF9E001B2366 /* addcert */,
 				795133F12F86D315001B2366 /* CertTokenExtension */,
+				79E4FF652FB61C6900DF8416 /* CertTokenHelper */,
 				795133EE2F86D315001B2366 /* Frameworks */,
 				795133D72F86CF9E001B2366 /* Products */,
 			);
@@ -101,6 +134,7 @@
 			children = (
 				795133D62F86CF9E001B2366 /* addcert.app */,
 				795133ED2F86D315001B2366 /* CertTokenExtension.appex */,
+				79E4FF642FB61C6900DF8416 /* CertTokenHelper.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -124,11 +158,13 @@
 				795133D32F86CF9E001B2366 /* Frameworks */,
 				795133D42F86CF9E001B2366 /* Resources */,
 				795134012F86D315001B2366 /* Embed Foundation Extensions */,
+				790FCE322FB6591600CBE194 /* Embed Login Items */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				795133FB2F86D315001B2366 /* PBXTargetDependency */,
+				790FCE3B2FB6599800CBE194 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				795133D82F86CF9E001B2366 /* addcert */,
@@ -162,6 +198,28 @@
 			productReference = 795133ED2F86D315001B2366 /* CertTokenExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		79E4FF632FB61C6900DF8416 /* CertTokenHelper */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 79E4FF6E2FB61C6A00DF8416 /* Build configuration list for PBXNativeTarget "CertTokenHelper" */;
+			buildPhases = (
+				79E4FF602FB61C6900DF8416 /* Sources */,
+				79E4FF612FB61C6900DF8416 /* Frameworks */,
+				79E4FF622FB61C6900DF8416 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				79E4FF652FB61C6900DF8416 /* CertTokenHelper */,
+			);
+			name = CertTokenHelper;
+			packageProductDependencies = (
+			);
+			productName = CertTokenHelper;
+			productReference = 79E4FF642FB61C6900DF8416 /* CertTokenHelper.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -176,6 +234,9 @@
 						CreatedOnToolsVersion = 26.4;
 					};
 					795133EC2F86D315001B2366 = {
+						CreatedOnToolsVersion = 26.4;
+					};
+					79E4FF632FB61C6900DF8416 = {
 						CreatedOnToolsVersion = 26.4;
 					};
 				};
@@ -196,6 +257,7 @@
 			targets = (
 				795133D52F86CF9E001B2366 /* addcert */,
 				795133EC2F86D315001B2366 /* CertTokenExtension */,
+				79E4FF632FB61C6900DF8416 /* CertTokenHelper */,
 			);
 		};
 /* End PBXProject section */
@@ -209,6 +271,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		795133EB2F86D315001B2366 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		79E4FF622FB61C6900DF8416 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -232,9 +301,21 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		79E4FF602FB61C6900DF8416 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		790FCE3B2FB6599800CBE194 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 79E4FF632FB61C6900DF8416 /* CertTokenHelper */;
+			targetProxy = 790FCE3A2FB6599800CBE194 /* PBXContainerItemProxy */;
+		};
 		795133FB2F86D315001B2366 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 795133EC2F86D315001B2366 /* CertTokenExtension */;
@@ -487,6 +568,72 @@
 			};
 			name = Release;
 		};
+		79E4FF6C2FB61C6A00DF8416 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = SY9CHW6UF7;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = br.com.certisign.addcert.CertTokenHelper;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		79E4FF6D2FB61C6A00DF8416 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = SY9CHW6UF7;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = br.com.certisign.addcert.CertTokenHelper;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -513,6 +660,15 @@
 			buildConfigurations = (
 				795133FF2F86D315001B2366 /* Debug */,
 				795134002F86D315001B2366 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		79E4FF6E2FB61C6A00DF8416 /* Build configuration list for PBXNativeTarget "CertTokenHelper" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				79E4FF6C2FB61C6A00DF8416 /* Debug */,
+				79E4FF6D2FB61C6A00DF8416 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

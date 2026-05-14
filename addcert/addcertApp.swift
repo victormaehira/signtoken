@@ -9,14 +9,9 @@ import SwiftUI
 
 @main
 struct addcertApp: App {
-    @StateObject private var passwordManager = PasswordPromptManager()
-
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .sheet(isPresented: $passwordManager.isPromptVisible) {
-                    PasswordPromptView(manager: passwordManager)
-                }
         }
     }
 }

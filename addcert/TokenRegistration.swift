@@ -1,10 +1,13 @@
 import Foundation
 import Security
 import CryptoTokenKit
+import ServiceManagement
+import AppKit
 
 enum TokenRegistration {
 
     private static let extensionBundleID = "br.com.certisign.addcert.CertTokenExtension"
+    private static let helperBundleID = "br.com.certisign.addcert.CertTokenHelper"
     private static let tokenInstanceID = "certisign-hsm-token"
     private static let certObjectID = "cert-0"
     private static let keyObjectID = "key-0"
@@ -91,6 +94,70 @@ enum TokenRegistration {
         try registerTokenConfiguration(certificate: certificate, displayLabel: subjectSummary)
 
         NSLog("Certificado registrado com sucesso via CryptoTokenKit")
+
+        registerHelperLoginItem()
+    }
+
+    /// Registers CertTokenHelper as a Login Item so it auto-launches
+    /// at user login to handle password/OTP prompts from the extension.
+    /// Also launches the helper immediately so the user does not need to
+    /// log out/in for the new flow to start working.
+    static func registerHelperLoginItem() {
+        let service = SMAppService.loginItem(identifier: helperBundleID)
+
+        if service.status == .enabled {
+            NSLog("CertTokenHelper já registrado como Login Item")
+        } else {
+            do {
+                try service.register()
+                NSLog("CertTokenHelper registrado como Login Item com sucesso (status=%d)",
+                      service.status.rawValue)
+            } catch {
+                NSLog("Falha ao registrar CertTokenHelper como Login Item: %@",
+                      error.localizedDescription)
+            }
+        }
+
+        launchHelperIfNeeded()
+    }
+
+    /// Launches the embedded CertTokenHelper.app once if it is not already
+    /// running. The helper is an LSUIElement agent app, so it stays hidden
+    /// and only surfaces a window when the extension requests credentials.
+    private static func launchHelperIfNeeded() {
+        let alreadyRunning = NSRunningApplication.runningApplications(
+            withBundleIdentifier: helperBundleID
+        ).isEmpty == false
+
+        if alreadyRunning {
+            NSLog("CertTokenHelper já está em execução")
+            return
+        }
+
+        guard let loginItemsURL = Bundle.main.builtInPlugInsURL?
+            .deletingLastPathComponent()
+            .appendingPathComponent("Library/LoginItems", isDirectory: true) else {
+            NSLog("Não foi possível derivar o caminho de Login Items")
+            return
+        }
+
+        let helperURL = loginItemsURL.appendingPathComponent("CertTokenHelper.app")
+        guard FileManager.default.fileExists(atPath: helperURL.path) else {
+            NSLog("CertTokenHelper.app não encontrado em: %@", helperURL.path)
+            return
+        }
+
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = false
+        configuration.hides = true
+        NSWorkspace.shared.openApplication(at: helperURL,
+                                          configuration: configuration) { app, error in
+            if let error = error {
+                NSLog("Falha ao iniciar CertTokenHelper: %@", error.localizedDescription)
+            } else {
+                NSLog("CertTokenHelper iniciado (pid=%d)", app?.processIdentifier ?? -1)
+            }
+        }
     }
 
     /// Registra a extensao CryptoTokenKit no sistema via pluginkit,
